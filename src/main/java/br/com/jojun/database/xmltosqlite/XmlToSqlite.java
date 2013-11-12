@@ -2,7 +2,14 @@ package br.com.jojun.database.xmltosqlite;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -13,6 +20,8 @@ import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 
 import br.com.jojun.database.xmltosqlite.model.ar.Biblia;
 import br.com.jojun.database.xmltosqlite.model.ar.Capitulo;
@@ -46,8 +55,6 @@ public class XmlToSqlite {
 			
 			String cargaBiblia = "INSERT into biblia (versao, idioma) VALUES ('"+versao+"', '"+idioma+"')";
 			
-			
-			
 			for(int i = 0; i < biblia.getLivros().size(); i++){
 				Livro l = biblia.getLivros().get(i);
 				LOGGER.info("Livro: "+l.getNome()+" total caps: "+l.getCapitulos().size());
@@ -57,25 +64,46 @@ public class XmlToSqlite {
 				
 				for(Capitulo c : l.getCapitulos()){
 					cargaCapitulos += "INSERT into capitulo (numero, qtd_versiculos, livroid) VALUES ("+c.getNumero()+", "+c.getVersiculos().size()+", "+i+")\n";
-					LOGGER.info("Capítulo: "+c.getNumero());
+//					LOGGER.info("Capítulo: "+c.getNumero());
 					for(Versiculo v : c.getVersiculos()){
-						LOGGER.info("Versiculo: "+v.getNumero()+". "+v.getVersiculo());
+//						LOGGER.info("Versiculo: "+v.getNumero()+". "+v.getVersiculo());
 //						cargaBiblia +="INSERT into versiculo (livro, capitulo, versiculo, texto, testamento, versao, idioma) "
 //								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+v.getVersiculo()+"', '"+testamento+"', '"+versao+"', '"+idioma+"')\n";
-						
 						cargaVersiculos +="INSERT into versiculos (livro, capitulo, versiculo, texto) "
-								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+v.getVersiculo()+"');\n";
+								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+getVersiculoFormatado(v.getVersiculo())+"');\n";
 					}
 				}
 			}
 			
-			File arSQL = new File("/home/82728925534/Dropbox/didaque/ar.bin");
+			File arSQL = new File("/home/82728925534/Dropbox/didaque/ar_out.bin");
 			try {
-				FileOutputStream out = new FileOutputStream(arSQL);
-				out.write(cargaVersiculos.getBytes());
-				out.close();
+//				String s = cargaVersiculos;
+//				  byte[] bytes = s.getBytes();
+//				  StringBuilder binary = new StringBuilder();
+//				  for (byte b : bytes)
+//				  {
+//				     int val = b;
+//				     for (int i = 0; i < 8; i++)
+//				     {
+//				        binary.append((val & 128) == 0 ? 0 : 1);
+//				        val <<= 1;
+//				     }
+//				     binary.append(' ');
+//				  }
+//				  System.out.println("'" + s + "' to binary: " + binary);
+//				
+//				FileOutputStream out = new FileOutputStream(arSQL);
+//				out.write(binary.toString());
+//				out.close();
+				String str64 = Base64.encode(cargaVersiculos.getBytes("UTF-8"));
+				Path path = Paths.get("/home/82728925534/Dropbox/didaque/ar.bin");
+				Files.write(path, str64.getBytes());
+				
+//				OutputStream out = new FileOutputStream(arSQL);
+//				OutputStreamWriter osw = new OutputStreamWriter(out);	
+//				osw.wri
+				
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			execute(cargaVersiculos);
@@ -86,16 +114,15 @@ public class XmlToSqlite {
 		
 	}
 	
+	private static String getVersiculoFormatado(String versiculo){
+		return versiculo.replace("'", "''");
+	}
+	
 	private static void createTables() throws SQLException {
-		Statement st;
-		st = connection.createStatement();
-
-		String tableVersiculo = "CREATE TABLE versiculos (livro TEXT, capitulo INTEGER, versiculo INTEGER, texto TEXT)";
-		String tableBiblia = "CREATE TABLE biblias (versao TEXT, idioma TEXT)";
-		st.execute(tableVersiculo);
-		st.execute(tableBiblia);
-
-		
+		String tableVersiculo = "DROP TABLE IF EXISTS versiculos; CREATE TABLE versiculos (livro TEXT, capitulo INTEGER, versiculo INTEGER, texto TEXT)";
+		String tableBiblia = "DROP TABLE IF EXISTS biblias; CREATE TABLE biblias (versao TEXT, idioma TEXT)";
+		execute(tableVersiculo);
+		execute(tableBiblia);
 	}
 
 	public static void createDatabase(String dbName, String outDir){
