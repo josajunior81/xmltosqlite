@@ -1,7 +1,7 @@
 package br.com.jojun.database.xmltosqlite;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -65,34 +65,33 @@ public class XmlToSqlite {
 						
 						cargaVersiculos +="INSERT into versiculos (livro, capitulo, versiculo, texto) "
 								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+v.getVersiculo()+"');\n";
-
 					}
 				}
 			}
 			
-			File arSQL = new File("/home/82728925534/Dropbox/didaque/ar.sql");
+			File arSQL = new File("/home/82728925534/Dropbox/didaque/ar.bin");
 			try {
-				FileWriter fw = new FileWriter(arSQL);
-				fw.append(cargaBiblia);
-//				fw.append(cargaLivros);
-				fw.append(cargaVersiculos);
-				
-				fw.close();
+				FileOutputStream out = new FileOutputStream(arSQL);
+				out.write(cargaVersiculos.getBytes());
+				out.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			execute(cargaVersiculos);
 		} catch (JAXBException e) {
 			e.printStackTrace();
 		}
+		
+		
 	}
 	
 	private static void createTables() throws SQLException {
 		Statement st;
 		st = connection.createStatement();
 
-		String tableVersiculo = "DROP TABLE IF EXISTS versiculos; CREATE TABLE versiculos (livro TEXT, capitulo INTEGER, versiculo INTEGER, texto TEXT)";
-		String tableBiblia = "DROP TABLE IF EXISTS biblias; CREATE TABLE biblias (versao TEXT, idioma TEXT)";
+		String tableVersiculo = "CREATE TABLE versiculos (livro TEXT, capitulo INTEGER, versiculo INTEGER, texto TEXT)";
+		String tableBiblia = "CREATE TABLE biblias (versao TEXT, idioma TEXT)";
 		st.execute(tableVersiculo);
 		st.execute(tableBiblia);
 
@@ -103,7 +102,7 @@ public class XmlToSqlite {
 
 	    try {
 	      Class.forName("org.sqlite.JDBC");
-	      connection = DriverManager.getConnection("jdbc:sqlite:/home/82728925534/Dropbox/didaque/ar.sqlite");
+	      connection = DriverManager.getConnection("jdbc:sqlite:/home/82728925534/Dropbox/didaque/biblias.sqlite");
 	    } catch ( Exception e ) {
 	      System.err.println( e.getClass().getName() + ": " + e.getMessage() );
 	      System.exit(0);
