@@ -48,7 +48,7 @@ public class XmlToSqlite {
 			String cargaVersiculos = "";
 			String versao = "Almeida Recebida";
 			String idioma = "PT";
-			String testamento = "VT";
+			int testamento = 1;
 			
 			createDatabase(null, null);
 			createTables();
@@ -59,7 +59,7 @@ public class XmlToSqlite {
 				Livro l = biblia.getLivros().get(i);
 				LOGGER.info("Livro: "+l.getNome()+" total caps: "+l.getCapitulos().size());
 				if(l.getNome().equalsIgnoreCase("mateus"))
-					testamento = "AT";
+					testamento =2;
 //				cargaLivros += "INSERT into livro (numero, nome, qtd_capitulos, testamento) VALUES ("+i+", '"+l.getNome()+"', "+l.getCapitulos().size()+", '"+testamento+"')\n";
 				
 				for(Capitulo c : l.getCapitulos()){
@@ -69,8 +69,8 @@ public class XmlToSqlite {
 //						LOGGER.info("Versiculo: "+v.getNumero()+". "+v.getVersiculo());
 //						cargaBiblia +="INSERT into versiculo (livro, capitulo, versiculo, texto, testamento, versao, idioma) "
 //								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+v.getVersiculo()+"', '"+testamento+"', '"+versao+"', '"+idioma+"')\n";
-						cargaVersiculos +="INSERT into versiculos (livro, capitulo, versiculo, texto) "
-								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+getVersiculoFormatado(v.getVersiculo())+"');\n";
+						cargaVersiculos +="INSERT into versiculos (livro, capitulo, versiculo, texto, testamento) "
+								+ "VALUES ('"+l.getNome()+"', "+c.getNumero()+", "+v.getNumero()+", '"+getVersiculoFormatado(v.getVersiculo())+"', "+testamento+");\n";
 					}
 				}
 			}
@@ -119,8 +119,8 @@ public class XmlToSqlite {
 	}
 	
 	private static void createTables() throws SQLException {
-		String tableVersiculo = "DROP TABLE IF EXISTS versiculos; CREATE TABLE versiculos (livro TEXT, capitulo INTEGER, versiculo INTEGER, texto TEXT)";
-		String tableBiblia = "DROP TABLE IF EXISTS biblias; CREATE TABLE biblias (versao TEXT, idioma TEXT)";
+		String tableVersiculo = "CREATE VIRTUAL TABLE versiculos USING fts3(livro TEXT, capitulo INTEGER, versiculo INTEGER, texto TEXT, testamento INTEGER, tokenize=simple)";
+		String tableBiblia = "CREATE TABLE biblias (versao TEXT, idioma TEXT)";
 		execute(tableVersiculo);
 		execute(tableBiblia);
 	}
@@ -129,7 +129,7 @@ public class XmlToSqlite {
 
 	    try {
 	      Class.forName("org.sqlite.JDBC");
-	      connection = DriverManager.getConnection("jdbc:sqlite:/home/82728925534/Dropbox/didaque/biblias.sqlite");
+	      connection = DriverManager.getConnection("jdbc:sqlite:/home/82728925534/Dropbox/didaque/almeidarecebida.sqlite");
 	    } catch ( Exception e ) {
 	      System.err.println( e.getClass().getName() + ": " + e.getMessage() );
 	      System.exit(0);
